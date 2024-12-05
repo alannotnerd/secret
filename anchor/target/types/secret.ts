@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/secret.json`.
  */
 export type Secret = {
-  "address": "AsjZ3kWAUSQRNt2pZVeJkywhZ6gpLpHZmJjduPmKZDZZ",
+  "address": "47AEQRvsoGSWdKx5sZYXHMZxh3VWpb7DyC2V5XoaQuo6",
   "metadata": {
     "name": "secret",
     "version": "0.1.0",
@@ -138,14 +138,14 @@ export type Secret = {
     {
       "name": "secret",
       "discriminator": [
-        255,
-        176,
-        4,
-        245,
-        188,
-        253,
-        124,
-        25
+        17,
+        168,
+        51,
+        21,
+        155,
+        143,
+        2,
+        68
       ]
     }
   ],

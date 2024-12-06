@@ -69,6 +69,9 @@ export function useClaim() {
 
         const tx = new Transaction()
             .add(
+                createAssociatedTokenAccountInstruction(claimant, toAta, claimant, mint)
+            )
+            .add(
                 ComputeBudgetProgram.setComputeUnitLimit({ units: 200_000 }),
                 ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 200_000 }),
                 await (program.methods as any).claim(

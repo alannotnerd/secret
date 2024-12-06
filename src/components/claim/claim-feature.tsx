@@ -20,11 +20,12 @@ export default function ClaimFeature() {
         }
 
         try {
-            await claim.mutateAsync({
+            const sig = await claim.mutateAsync({
                 index: parseInt(index),
                 amount: parseInt(amount),
                 proof: proof.split(','),
             })
+            console.info('Claimed:', sig)
         } catch (error) {
             console.error('Failed to claim:', error)
         }

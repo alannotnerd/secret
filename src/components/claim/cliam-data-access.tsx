@@ -1,7 +1,7 @@
 'use client'
 
 import { useConnection } from '@solana/wallet-adapter-react'
-import { SYSVAR_RENT_PUBKEY, SystemProgram, Cluster, Keypair, PublicKey } from '@solana/web3.js'
+import { SYSVAR_RENT_PUBKEY, SystemProgram, Cluster, Keypair, PublicKey, ComputeBudgetProgram, Transaction, VersionedTransaction } from '@solana/web3.js'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import toast from 'react-hot-toast'
@@ -10,12 +10,11 @@ import { useAnchorProvider } from '../solana/solana-provider'
 import { useTransactionToast } from '../ui/ui-layout'
 import IDL from './claim.json'
 import { BN, Program } from '@coral-xyz/anchor'
-import { TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from '@solana/spl-token'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { TOKEN_PROGRAM_ID, createAssociatedTokenAccountInstruction, getAssociatedTokenAddress } from '@solana/spl-token'
+import { useWallet, Wallet } from '@solana/wallet-adapter-react'
 import { AnchorProvider } from '@coral-xyz/anchor'
 
 export function useClaimProgram() {
-    const { connection } = useConnection()
     const { cluster } = useCluster()
     const provider = useAnchorProvider()
     const programId = useMemo(() => new PublicKey("BDSchMcYS2porfeisQoVNgtbJeqrgCxTU6bwYaaWY9ci"), [cluster])
@@ -32,8 +31,9 @@ export function useClaimProgram() {
 }
 
 export function useClaim() {
-    const { program, programId, mint, base } = useClaimProgram()
-    const { publicKey: claimant } = useWallet()
+    const { program, programId, mint, base, } = useClaimProgram()
+    const { publicKey: claimant, wallet } = useWallet()
+    const { connection } = useConnection()
 
     const claim = async (index: number, amount: number, proof: string[]) => {
         if (!claimant) throw new Error('Wallet not connected')
@@ -43,16 +43,20 @@ export function useClaim() {
             programId
         );
 
-        const fromAta = await getAssociatedTokenAddress(mint, distributor)
+
+        const fromAta = await getAssociatedTokenAddress(mint, distributor, true)
         const toAta = await getAssociatedTokenAddress(mint, claimant)
         const [claimStatus] = PublicKey.findProgramAddressSync(
             [
                 Buffer.from('ClaimStatus'),
-                Buffer.from(new BN(index).toArray('le', 8)),
+                new BN(index).toArrayLike(Buffer, 'le', 8),
                 distributor.toBuffer(),
             ],
             programId
         )
+
+        const proof_buf = proof.map(p => new BN(p.slice(2), 'hex').toArrayLike(Buffer, 'be', 32));
+        console.log(proof_buf.map(p => p.toString("hex")))
 
         const accounts = {
             distributor,
@@ -63,10 +67,25 @@ export function useClaim() {
             payer: claimant,
         };
 
-        (program.methods as any)
-            .claim(index, new BN(amount), proof)
-            .accounts(accounts)
-            .rpc();
+        const tx = new Transaction()
+            .add(
+                ComputeBudgetProgram.setComputeUnitLimit({ units: 200_000 }),
+                ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 200_000 }),
+                await (program.methods as any).claim(
+                    new BN(index),
+                    new BN(amount),
+                    proof_buf
+                ).accounts(accounts)
+                    .instruction()
+            )
+        await (wallet?.adapter as any).prepareTransaction(tx, connection, {});
+        console.log(tx.serialize({ verifySignatures: false, requireAllSignatures: false }).toString("hex"));
+
+        const sig = await wallet?.adapter.sendTransaction(tx, connection, { skipPreflight: true })
+        console.log(sig);
+        return sig
+
+
     }
 
     return {

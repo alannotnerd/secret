@@ -1,8 +1,8 @@
 import './globals.css'
-import {ClusterProvider} from '@/components/cluster/cluster-data-access'
-import {SolanaProvider} from '@/components/solana/solana-provider'
-import {UiLayout} from '@/components/ui/ui-layout'
-import {ReactQueryProvider} from './react-query-provider'
+import { ClusterProvider } from '@/components/cluster/cluster-data-access'
+import { SolanaProvider } from '@/components/solana/solana-provider'
+import { UiLayout } from '@/components/ui/ui-layout'
+import { ReactQueryProvider } from './react-query-provider'
 
 export const metadata = {
   title: 'secret',
@@ -13,6 +13,7 @@ const links: { label: string; path: string }[] = [
   { label: 'Account', path: '/account' },
   { label: 'Clusters', path: '/clusters' },
   { label: 'Secret Program', path: '/secret' },
+  { label: 'Claim Program', path: '/claim' },
 ]
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
